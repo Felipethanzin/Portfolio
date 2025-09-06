@@ -1,3 +1,4 @@
+/* Reset básico */
 * {
   margin: 0;
   padding: 0;
@@ -11,7 +12,7 @@ html, body {
   background: #f0f4f8;
 }
 
-
+/* TOPO */
 .topo {
   background: linear-gradient(90deg, #0f172a, #3b82f6);
   width: 100%;
@@ -29,10 +30,15 @@ html, body {
   font-size: 22px;
 }
 
+/* Links do menu */
 .links {
   list-style: none;
   display: flex;
   gap: 25px;
+}
+
+.links li {
+  display: inline-block;
 }
 
 .links a {
@@ -48,7 +54,7 @@ html, body {
   transform: scale(1.1);
 }
 
-
+/* BLOCO */
 .bloco {
   background: linear-gradient(145deg, #6366f1, #8b5cf6);
   border-radius: 20px;
@@ -96,7 +102,7 @@ html, body {
   transform: scale(1.05);
 }
 
-
+/* CONTAINER */
 .container {
   width: 95%;
   margin: 40px auto;
