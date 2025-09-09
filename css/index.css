@@ -1,0 +1,153 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.top {
+    background-color: #0f172a;
+    padding: 20px 0;
+}
+
+.Titulo {
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.Titulo h1 {
+    font-size: 28px;
+    font-family: 'Permanent Marker', cursive;
+}
+
+.lista ul {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    list-style: none;
+    flex-wrap: wrap;
+}
+
+.lista li {
+    background-color: #011c46;
+    border-radius: 10px;
+    padding: 5px 10px;
+    transition: all 0.3s ease-in-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.lista li a {
+    text-decoration: none;
+    color: rgb(224, 195, 64);
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.lista li:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.lista li a:hover {
+    color: #ffffff;
+}
+
+.container,
+.blocos-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; 
+    gap: 20px; 
+    
+}
+
+.bloco {
+    width: 300px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    text-align: center;
+    background-color: #fff;
+    transition: all 0.3s ease-in-out;
+}
+
+.bloco:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+}
+
+.bloco img {
+    width: 100%;
+    height: 200px; 
+    object-fit: cover; 
+    display: block;
+}
+
+
+.bloco h2 {
+    font-size: 20px;
+    margin: 15px 0;
+    font-family: 'Permanent Marker', cursive;
+}
+
+.pj {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+    font-family: 'Permanent Marker', cursive;
+}
+
+.ver-mais {
+    padding: 10px 20px;
+    margin-bottom: 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #6366f1;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.ver-mais:hover {
+    background-color: #4f46e5;
+}
+
+footer {
+    background-color: #0f172a;
+    color: #ffffff;
+    text-align: center;
+    padding: 15px 0;
+    margin-top: 20px;
+}
+
+footer a{
+    color: rgb(224, 195, 64);
+    text-decoration: none;
+}
+
+
+.teste {
+   
+    height: 25px;
+    background-color: #0f172a;
+    
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .Titulo h1 {
+        font-size: 22px;
+    }
+    .lista ul {
+        gap: 10px;
+    }
+    .bloco {
+        width: 90%; 
+    }
+}
