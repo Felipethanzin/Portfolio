@@ -3,7 +3,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+       font-family: serif;
 }
 
 .top {
@@ -18,7 +18,8 @@
 }
 
 .Titulo h1 {
-    font-size: 28px;
+    font-size: 28px
+        font-family: serif;
    
 }
 
@@ -92,6 +93,7 @@
 .bloco h2 {
     font-size: 20px;
     margin: 15px 0;
+        font-family: serif;
    
 }
 
@@ -99,6 +101,7 @@
     display: flex;
     justify-content: center;
     padding: 10px;
+        font-family: serif;
     
 }
 
@@ -151,4 +154,5 @@ footer a{
         width: 90%; 
     }
 }
+
 
