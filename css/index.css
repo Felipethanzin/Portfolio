@@ -23,7 +23,7 @@ body {
 
 .Titulo h1 {
     font-size: 32px;
-    font-family: 'Permanent Marker', cursive;
+  font-family: 'Georgia', serif;
     letter-spacing: 1px;
 }
 
@@ -166,3 +166,4 @@ footer a:hover {
         gap: 8px;
     }
 }
+
