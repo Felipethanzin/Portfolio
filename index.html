@@ -3,143 +3,117 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Felipe Caetano | Desenvolvedor</title>
+<title>Felipe Caetano | Desenvolvedor Front-End</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-<!-- Ícones -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<!-- CSS externo -->
 <link rel="stylesheet" href="css/teste.css">
-
 </head>
 <body>
 
 <nav>
-<h1>Felipe Miguel</h1>
-<ul>
+<div class="logo">Felipe Caetano</div>
+
+<input type="checkbox" id="menu-toggle">
+<label for="menu-toggle" class="menu-icon">
+<i class="fas fa-bars"></i>
+</label>
+
+<ul class="menu">
 <li><a href="#sobre">Sobre</a></li>
+<li><a href="#formacao">Formação</a></li>
 <li><a href="#habilidades">Habilidades</a></li>
 <li><a href="#projetos">Projetos</a></li>
-<li><a href="#formacao">Formação</a></li>
 <li><a href="#contato">Contato</a></li>
 </ul>
 </nav>
 
 <header>
-<h2>Técnico em Desenvolvimento </h2>
-<p>🎓Técnico em Desenvolvimento de Sistemas |💻 Desenvolvedor Front-End</p>
+<h1>Técnico em Desenvolvimento de Sistemas</h1>
+<p>Desenvolvedor Front-End focado em interfaces modernas, responsivas e funcionais.</p>
 <a href="#projetos" class="btn">Ver Projetos</a>
 </header>
 
-<section id="sobre" class="sobre">
-<h3>Sobre Mim</h3>
+<section id="sobre">
+<h2>Sobre Mim</h2>
 <p>
-Olá, sou Felipe Miguel.
-Técnico em Desenvolvimento de Sistemas, com conhecimento em HTML e CSS. 
-Atuo com manutenção de computadores e suporte técnico (Help Desk), oferecendo soluções rápidas e 
-eficientes para hardware e software.
+Técnico em Desenvolvimento de Sistemas, com experiência em desenvolvimento web (HTML, CSS e JavaScript) e suporte técnico em hardware e software.
+Atualmente cursando Análise e Desenvolvimento de Sistemas – 1º período, buscando aprofundar conhecimentos em programação, banco de dados e desenvolvimento de aplicações.
 </p>
 </section>
 
 <section id="formacao">
-  <h3>Formação Acadêmica</h3>
-  <div class="skills">
+<h2>Formação Acadêmica</h2>
+<div class="grid">
+<div class="card">
+<h3>Técnico em Desenvolvimento de Sistemas</h3>
+<p>Estácio</p>
+</div>
 
-    <div class="skill">
-      <strong>Técnico em Desenvolvimento de Sistemas</strong><br></br>
-      Estácio 
-     
-    </div>
+<div class="card">
+<h3>Fundamentos de TI</h3>
+<p>Fundação Bradesco</p>
+</div>
 
-    <div class="skill">
-      <strong>Fundamentos de TI: Hardware e Software</strong><br><br><br>
-        <P>Fundação Bradesco </P>
-      
-    </div>
+<div class="card">
+<h3>Robótica</h3>
+<p>Centro Vocacional de Tecnologia e Inovação</p>
+</div>
 
-    <div class="skill">
-      <strong>Robótica</strong><br><br><br>
-      <p>Centro Vocacional de Tecnologia e Inovação</p>
-     
-    </div>
+<div class="card">
+<h3>Informática Básica</h3>
+<p>Centro Vocacional de Tecnologia e Inovação</p>
+</div>
 
-    <div class="skill">
-      <strong>Informática Básica</strong><br><br><br>
-      <p>Centro Vocacional de Tecnologia e Inovação</p>
-    
-    </div>
-
-    <div class="skill">
-      <strong>Desenvolvimento em HTML, CSS e JavaScript</strong><br><br><br>
-      <p>Fundação Bradesco</p>
-
-    
-    </div>
-
- 
-
-  </div>
+<div class="card">
+<h3>HTML, CSS e JavaScript</h3>
+<p>Fundação Bradesco</p>
+</div>
+</div>
 </section>
+
 <section id="habilidades">
-<h3>Habilidades</h3>
-<div class="skills">
-<div class="skill"><br>HTML5</div>
-<div class="skill"><br>CSS3</div>
-<div class="skill"><br>JavaScript</div>
-<div class="skill">Configuração e Manutenção de Redes</div>
-<div class="skill">Pacote Microsoft Office</div>
-<div class="skill">Manutenção de Computadores</div>
+<h2>Habilidades</h2>
+<div class="grid">
+<div class="card">HTML5</div>
+<div class="card">CSS3</div>
+<div class="card">JavaScript</div>
+<div class="card">Configuração de Redes</div>
+<div class="card">Pacote Office</div>
+<div class="card">Manutenção de Computadores</div>
 </div>
 </section>
 
 <section id="projetos">
-<h3>Projetos</h3>
-<div class="projetos-grid">
-
-<div class="projeto">
-<h4>💻 Projetos de Lógica de Programação</h4><br>
-<p>Projetos voltados ao desenvolvimento da lógica de programação, com foco na resolução de problemas e na criação de algoritmos eficientes.</p>
-<a href="https://github.com/Felipethanzin/Logica-Nivel-1">Ver Projeto</a>
+<h2>Projetos</h2>
+<div class="grid">
+<div class="card projeto">
+<h3>Projetos de Lógica</h3>
+<p>Desenvolvimento de algoritmos e resolução de problemas com foco em raciocínio lógico.</p>
+<a href="https://github.com/Felipethanzin/Logica-Nivel-1" target="_blank">Ver no GitHub</a>
 </div>
 
-<div class="projeto">
-<h4>🚀 Projeto DevNotes – Tela de Login Responsiva</h4><br>
-<p>Esse projeto foi criado para praticar HTML5, CSS3 e responsividade, simulando uma interface de aplicativo para anotações chamada DevNotes.</p>
-<a href="https://github.com/Felipethanzin/DevNotes">Ver Projeto</a>
+<div class="card projeto">
+<h3>DevNotes - Login Responsivo</h3>
+<p>Interface responsiva desenvolvida com HTML5 e CSS3 simulando aplicativo de anotações.</p>
+<a href="https://github.com/Felipethanzin/DevNotes" target="_blank">Ver no GitHub</a>
 </div>
-
 </div>
 </section>
 
-<section id="contato" class="contato">
-<h3>Contato</h3>
-<p>Entre em contato pelas redes:</p>
-
-<div class="redes">
-
-<a href="https://instagram.com/felipe_miguel_dev" target="_blank">
-<i class="fab fa-instagram"></i>
-</a>
-
-<a href="www.linkedin.com/in/felipemigueldev" target="_blank">
-<i class="fab fa-linkedin"></i>
-</a>
-
-<a href="https://wa.me/5521991604197" target="_blank">
-<i class="fab fa-whatsapp"></i>
-</a>
-
-<a href="https://github.com/Felipethanzin" target="_blank">
-<i class="fab fa-github"></i>
-</a>
-
+<section id="contato">
+<h2>Contato</h2>
+<p>Conecte-se comigo:</p>
+<div class="social">
+<a href="https://instagram.com/felipe_miguel_dev" target="_blank"><i class="fab fa-instagram"></i></a>
+<a href="https://www.linkedin.com/in/felipemigueldev" target="_blank"><i class="fab fa-linkedin"></i></a>
+<a href="https://wa.me/5521991604197" target="_blank"><i class="fab fa-whatsapp"></i></a>
+<a href="https://github.com/Felipethanzin" target="_blank"><i class="fab fa-github"></i></a>
 </div>
 </section>
 
 <footer>
-© 2026 Felipe Caetano - Todos os direitos reservados
+© 2026 Felipe Caetano. Todos os direitos reservados.
 </footer>
 
 </body>
